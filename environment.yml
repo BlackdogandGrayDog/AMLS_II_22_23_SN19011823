@@ -1,0 +1,22 @@
+name: amls_II-final
+
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+    - numpy
+    - scipy
+    - pandas
+    - scikit-learn
+    - matplotlib
+    - tqdm
+    - datetime
+    - tensorflow
+    - keras
+    - keras-rl2
+    - spyder-kernels
+    - OpenCV-python
+    - keras-applications
+    - keras-preprocessing
+    - scikit-image
+    - keras-tuner
