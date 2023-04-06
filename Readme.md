@@ -11,25 +11,26 @@ The field of super-resolution has seen significant advancements in recent years,
 ## Contents
 This repository contains various scripts and modules that cover different aspects of constructing, training, and evaluating deep learning models for image super-resolution tasks.
 
-crop_image_preprocessing: This script provides functions for cropping and reading high-resolution images and their corresponding low-resolution images at different scaling factors (x2, x3, and x4) for use in a super-resolution GAN.
+1. **crop_image_preprocessing**: This script provides functions for cropping and reading high-resolution images and their corresponding low-resolution images at different scaling factors (x2, x3, and x4) for use in a super-resolution GAN.
 
-initial_model_construction: This script contains multiple deep learning model architectures for image super-resolution tasks. The main goal of these models is to upscale low-resolution images to high-resolution images while maintaining or improving image quality. This file includes the following architectures:
+2. **initial_model_construction**: This script contains multiple deep learning model architectures for image super-resolution tasks. The main goal of these models is to upscale low-resolution images to high-resolution images while maintaining or improving image quality. This file includes the following architectures:
+    - SRCNN (Super-Resolution Convolutional Neural Network)
+    - SRResNet (Super-Resolution Residual Network)
+    - Autoencoder-based Super-Resolution
+    - Combined SRCNN and Autoencoder
 
-SRCNN (Super-Resolution Convolutional Neural Network)
-SRResNet (Super-Resolution Residual Network)
-Autoencoder-based Super-Resolution
-Combined SRCNN and Autoencoder
-initial_selection_training: This script streamlines the initial model selection, training, and performance comparison process for image super-resolution tasks. It includes functions for training SRCNN, SRResNet, AutoEncoder, compiling and training these models, and visualising generated images and performance metrics.
+3. **initial_selection_training**: This script streamlines the initial model selection, training, and performance comparison process for image super-resolution tasks. It includes functions for training SRCNN, SRResNet, AutoEncoder, compiling and training these models, and visualising generated images and performance metrics.
 
-gan_construction_training: This script provides a comprehensive workflow for constructing, training, and evaluating Generative Adversarial Networks (GANs) for image super-resolution tasks. It includes functions for building the SRGAN architecture with optional VGG19 integration, training the generator and discriminator models, and visualizing the generated high-resolution images along with performance metrics.
+4. **gan_construction_training**: This script provides a comprehensive workflow for constructing, training, and evaluating Generative Adversarial Networks (GANs) for image super-resolution tasks. It includes functions for building the SRGAN architecture with optional VGG19 integration, training the generator and discriminator models, and visualizing the generated high-resolution images along with performance metrics.
 
-architecture_tuning: This script provides a systematic approach to fine-tuning the architecture of Generative Adversarial Networks (GANs) for image super-resolution tasks. It includes functions for adjusting model parameters such as layer depths, attention mechanisms, skip connections, and feature extraction algorithms for content loss calculations.
+5. **architecture_tuning**: This script provides a systematic approach to fine-tuning the architecture of Generative Adversarial Networks (GANs) for image super-resolution tasks. It includes functions for adjusting model parameters such as layer depths, attention mechanisms, skip connections, and feature extraction algorithms for content loss calculations.
 
-final_testing: This script includes functions for training the final models on the entire training dataset and evaluating their performance on a separate validation dataset. It compares the performance of our GAN-based SRCNNencoder model with other popular models, SRCNN and SRAutoencoder.
+6. **final_testing**: This script includes functions for training the final models on the entire training dataset and evaluating their performance on a separate validation dataset. It compares the performance of our GAN-based SRCNNencoder model with other popular models, SRCNN and SRAutoencoder.
 
-hyperparameter_tuning: This script provides methods for optimizing the hyperparameters of the models, using techniques such as grid search, random search, and Bayesian optimization.
+7. **hyperparameter_tuning**: This script provides methods for optimizing the hyperparameters of the models, using techniques such as grid search, random search, and Bayesian optimization.
 
-main: The main script that orchestrates the entire process, from data preprocessing to model training, evaluation, and comparison.
+8. **main**: The main script that orchestrates the entire process, from data preprocessing to model training, evaluation, and comparison.
+
 
 ## Dependencies
 
