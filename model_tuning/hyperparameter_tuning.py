@@ -150,23 +150,10 @@ def gan_tuning(lr_x4_crop_image, hr_crop_image, lr_x4_val_image, hr_val_image, m
     train_gan(tuner, lr_x4_crop_image, hr_crop_image, epochs=train_epochs, batch_size=1, validation_data=(lr_x4_val_image, hr_val_image))
 
 #%%
-def train_and_evaluate_srgan(batch_size, lr_x4_crop_image, hr_crop_image, lr_x4_val_image, hr_val_image):
-  lr_shape = (75, 75, 3)
-  hr_shape = (300, 300, 3)
-  scale_factor = 4
-  gan_generator = gct.GAN_generator(lr_shape, scale_factor)
-  gan_discriminator = gct.GAN_discriminator(hr_shape)
-  gan_discriminator.compile(loss="binary_crossentropy", optimizer="adam")
-  gan_discriminator.trainable = False
-  vgg_network = gct.vgg19_block()
-  srgan_model = gct.SRGAN_block_vgg(gan_generator, gan_discriminator, vgg_network, lr_shape)
-  srgan_model.compile(loss=["binary_crossentropy", "mse"], loss_weights=[1e-3, 1], optimizer="Adam")
-  for layer in vgg_network.layers:
-    layer.trainable = False
-
+def tune_batchsize_srgan(gan_generator, gan_discriminator, srgan_model, vgg_network, batch_size, lr_x4_crop_image, hr_crop_image, lr_x4_val_image, hr_val_image):
   trained_gen, trained_disc, epoch_g_losses, epoch_d_losses, epoch_psnr_values, val_g_losses, val_d_losses, val_psnr_values = gct.train_srgan_vgg(gan_generator, gan_discriminator, srgan_model, vgg_network, lr_x4_crop_image, hr_crop_image, val_split=0.1, epochs=20, batch_size=batch_size)
   # Plot the generated image
-  gen_hr_gan, real_hr_gan, gen_lr_gan = ist.plot_generated_image(trained_gen, 1, lr_x4_val_image, hr_val_image)
+  gen_hr_gan, real_hr_gan, gen_lr_gan = ist.plot_generated_image(trained_gen, 90, lr_x4_val_image, hr_val_image)
 
   # Plot the training and validation diagrams
   gct.plot_metrics_vgg(epoch_g_losses, epoch_d_losses, epoch_psnr_values, val_g_losses, val_d_losses, val_psnr_values)
@@ -184,10 +171,21 @@ def train_and_evaluate_srgan(batch_size, lr_x4_crop_image, hr_crop_image, lr_x4_
   print(f"Non-VGG Average PSNR for Low-Res Image: {psnr_value}")
   print(f"Non-VGG Average SSIM for Low-Res Image: {ssim_value}")
 
-
 #%%
 def batch_size_tuning(lr_x4_crop_image, hr_crop_image, lr_x4_val_image, hr_val_image):
     batch_sizes = [2, 4, 6, 8]
     for batch_size in batch_sizes:
+        lr_shape = (75, 75, 3)
+        hr_shape = (300, 300, 3)
+        scale_factor = 4
+        gan_generator = gct.GAN_generator(lr_shape, scale_factor)
+        gan_discriminator = gct.GAN_discriminator(hr_shape)
+        gan_discriminator.compile(loss="binary_crossentropy", optimizer="adam")
+        gan_discriminator.trainable = False
+        vgg_network = gct.vgg19_block()
+        srgan_model = gct.SRGAN_block_vgg(gan_generator, gan_discriminator, vgg_network, lr_shape)
+        srgan_model.compile(loss=["binary_crossentropy", "mse"], loss_weights=[1e-3, 1], optimizer="Adam")
+        for layer in vgg_network.layers:
+          layer.trainable = False
         print(f"Training with batch size: {batch_size}")
-        train_and_evaluate_srgan(batch_size, lr_x4_crop_image, hr_crop_image, lr_x4_val_image, hr_val_image)
+        tune_batchsize_srgan(gan_generator, gan_discriminator, srgan_model, vgg_network, batch_size, lr_x4_crop_image, hr_crop_image, lr_x4_val_image, hr_val_image)
