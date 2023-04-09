@@ -150,42 +150,40 @@ def gan_tuning(lr_x4_crop_image, hr_crop_image, lr_x4_val_image, hr_val_image, m
     train_gan(tuner, lr_x4_crop_image, hr_crop_image, epochs=train_epochs, batch_size=1, validation_data=(lr_x4_val_image, hr_val_image))
 
 #%%
-def train_and_evaluate_srgan(batch_size, lr_images, hr_images, lr_val_images, hr_val_images):
-    lr_shape = (75, 75, 3)
-    hr_shape = (300, 300, 3)
-    scale_factor = 4
-    gan_generator = gct.GAN_generator(lr_shape, scale_factor)
-    gan_discriminator = gct.GAN_discriminator(hr_shape)
-    gan_discriminator.compile(loss="binary_crossentropy", optimizer="adam")
-    gan_discriminator.trainable = False
-    vgg_network = gct.vgg19_block()
-    srgan_model = gct.SRGAN_block_vgg(gan_generator, gan_discriminator, vgg_network, lr_shape)
-    srgan_model.compile(loss=["binary_crossentropy", "mse"], loss_weights=[1e-3, 1], optimizer="Adam")
-    for layer in vgg_network.layers:
-        layer.trainable = False
-        
-    trained_gen, trained_disc, epoch_g_losses, epoch_d_losses, epoch_psnr_values, val_g_losses, val_d_losses, val_psnr_values = gct.train_srgan_vgg(gan_generator, gan_discriminator, srgan_model, vgg_network, lr_images, hr_images, val_split=0.1, epochs=30, batch_size=batch_size)
+def train_and_evaluate_srgan(batch_size, lr_x4_crop_image, hr_crop_image, lr_x4_val_image, hr_val_image):
+  lr_shape = (75, 75, 3)
+  hr_shape = (300, 300, 3)
+  scale_factor = 4
+  gan_generator = gct.GAN_generator(lr_shape, scale_factor)
+  gan_discriminator = gct.GAN_discriminator(hr_shape)
+  gan_discriminator.compile(loss="binary_crossentropy", optimizer="adam")
+  gan_discriminator.trainable = False
+  vgg_network = gct.vgg19_block()
+  srgan_model = gct.SRGAN_block_vgg(gan_generator, gan_discriminator, vgg_network, lr_shape)
+  srgan_model.compile(loss=["binary_crossentropy", "mse"], loss_weights=[1e-3, 1], optimizer="Adam")
+  for layer in vgg_network.layers:
+    layer.trainable = False
 
-    # Plot the generated image
-    gen_hr_gan, real_hr_gan, gen_lr_gan = ist.plot_generated_image(trained_gen, 90, lr_val_images, hr_val_images)
+  trained_gen, trained_disc, epoch_g_losses, epoch_d_losses, epoch_psnr_values, val_g_losses, val_d_losses, val_psnr_values = gct.train_srgan_vgg(gan_generator, gan_discriminator, srgan_model, vgg_network, lr_x4_crop_image, hr_crop_image, val_split=0.1, epochs=20, batch_size=batch_size)
+  # Plot the generated image
+  gen_hr_gan, real_hr_gan, gen_lr_gan = ist.plot_generated_image(trained_gen, 1, lr_x4_val_image, hr_val_image)
 
-    # Plot the training and validation diagrams
-    gct.plot_metrics_vgg(epoch_g_losses, epoch_d_losses, epoch_psnr_values, val_g_losses, val_d_losses, val_psnr_values)
-    
+  # Plot the training and validation diagrams
+  gct.plot_metrics_vgg(epoch_g_losses, epoch_d_losses, epoch_psnr_values, val_g_losses, val_d_losses, val_psnr_values)
 
-    # Calculate PSNR and SSIM
-    psnr_value = psnr(real_hr_gan, gen_hr_gan, data_range=real_hr_gan.max() - real_hr_gan.min())
-    ssim_value = ssim(real_hr_gan, gen_hr_gan, multichannel=True, data_range=real_hr_gan.max() - real_hr_gan.min(), win_size=3)
-    print(f"Non-VGG Average PSNR: {psnr_value}")
-    print(f"Non-VGG Average SSIM: {ssim_value}")
 
-    # Calculate PSNR and SSIM for low-resolution image
-    psnr_value = psnr(real_hr_gan, gen_lr_gan, data_range=real_hr_gan.max() - real_hr_gan.min())
-    ssim_value = ssim(real_hr_gan, gen_lr_gan, multichannel=True, data_range=real_hr_gan.max() - real_hr_gan.min(), win_size=3)
-    print(f"Non-VGG Average PSNR for Low-Res Image: {psnr_value}")
-    print(f"Non-VGG Average SSIM for Low-Res Image: {ssim_value}")
+  # Calculate PSNR and SSIM
+  psnr_value = psnr(real_hr_gan, gen_hr_gan, data_range=real_hr_gan.max() - real_hr_gan.min())
+  ssim_value = ssim(real_hr_gan, gen_hr_gan, multichannel=True, data_range=real_hr_gan.max() - real_hr_gan.min(), win_size=3)
+  print(f"Non-VGG Average PSNR: {psnr_value}")
+  print(f"Non-VGG Average SSIM: {ssim_value}")
 
-    return trained_gen, trained_disc, epoch_g_losses, epoch_d_losses, epoch_psnr_values, val_g_losses, val_d_losses, val_psnr_values
+  # Calculate PSNR and SSIM for low-resolution image
+  psnr_value = psnr(real_hr_gan, gen_lr_gan, data_range=real_hr_gan.max() - real_hr_gan.min())
+  ssim_value = ssim(real_hr_gan, gen_lr_gan, multichannel=True, data_range=real_hr_gan.max() - real_hr_gan.min(), win_size=3)
+  print(f"Non-VGG Average PSNR for Low-Res Image: {psnr_value}")
+  print(f"Non-VGG Average SSIM for Low-Res Image: {ssim_value}")
+
 
 #%%
 def batch_size_tuning(lr_x4_crop_image, hr_crop_image, lr_x4_val_image, hr_val_image):

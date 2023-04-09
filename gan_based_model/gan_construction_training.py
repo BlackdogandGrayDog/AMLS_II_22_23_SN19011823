@@ -15,7 +15,7 @@ sys.path.append('../initial_model_selection')
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.layers import Input, Dense, Reshape, Flatten, BatchNormalization, Activation, LeakyReLU, UpSampling2D, Conv2D, MaxPool2D, add, Multiply, GlobalAveragePooling2D
+from tensorflow.keras.layers import Input, Dense, Reshape, Flatten, BatchNormalization, Activation, LeakyReLU, UpSampling2D, Conv2D, MaxPool2D, add, Multiply, GlobalAveragePooling2D, GlobalMaxPooling2D, Concatenate
 from tensorflow.keras.models import Model
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
@@ -47,10 +47,14 @@ def GAN_generator(lr_shape, scale_factor):
     srcnn_output = add([upsampled, x])
 
     # Self-Attention Mechanism
-    # Apply global average pooling and reshape for the attention mechanism
     channels = 3
-    attention = GlobalAveragePooling2D()(srcnn_output)
-    attention = Reshape((1, 1, channels))(attention)
+    # Global average pooling
+    attention_avg = GlobalAveragePooling2D()(srcnn_output)
+    # Global max pooling
+    attention_max = GlobalMaxPooling2D()(srcnn_output)
+    # Concatenate the average and max pooling results
+    attention = Concatenate(axis=-1)([attention_avg, attention_max])
+    attention = Reshape((1, 1, 2 * channels))(attention)
     # Dense layers to learn the attention weights
     attention = Dense(channels // 2, activation='selu', use_bias=False, kernel_initializer='he_uniform')(attention)
     attention = Dense(channels, activation='selu', use_bias=False, kernel_initializer='he_uniform')(attention)
@@ -88,8 +92,14 @@ def GAN_generator(lr_shape, scale_factor):
     
     # Second Self-Attention Mechanism (applied to the combined output)
     channels = 3
-    attention = GlobalAveragePooling2D()(decoded_output)
-    attention = Reshape((1, 1, channels))(attention)
+    # Global average pooling
+    attention_avg = GlobalAveragePooling2D()(decoded_output)
+    # Global max pooling
+    attention_max = GlobalMaxPooling2D()(decoded_output)
+    # Concatenate the average and max pooling results
+    attention = Concatenate(axis=-1)([attention_avg, attention_max])
+    attention = Reshape((1, 1, 2 * channels))(attention)
+    # Dense layers to learn the attention weights
     attention = Dense(channels // 2, activation='selu', use_bias=False, kernel_initializer='he_uniform')(attention)
     attention = Dense(channels, activation='selu', use_bias=False, kernel_initializer='he_uniform')(attention)
     attention = Activation('sigmoid')(attention)

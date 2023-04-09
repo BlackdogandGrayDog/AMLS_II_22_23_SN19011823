@@ -12,7 +12,7 @@ It includes functions for adjusting model parameters such as layer depths, atten
 import sys
 sys.path.append('../gan_based_model')
 sys.path.append('../initial_model_selection')
-from tensorflow.keras.layers import Input, Conv2D, Dense, Activation, UpSampling2D, Multiply, MaxPool2D, GlobalAveragePooling2D, Reshape, add
+from tensorflow.keras.layers import Input, Conv2D, Dense, Activation, UpSampling2D, Multiply, MaxPool2D, GlobalAveragePooling2D, Reshape, add, GlobalMaxPooling2D, Concatenate
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
 from tensorflow.keras.models import Model
@@ -149,12 +149,20 @@ def GAN_generator_cnn(lr_shape, scale_factor):
 
     # Self-Attention Mechanism
     channels = 3
-    attention = GlobalAveragePooling2D()(srcnn_output)
-    attention = Reshape((1, 1, channels))(attention)
+    # Global average pooling
+    attention_avg = GlobalAveragePooling2D()(srcnn_output)
+    # Global max pooling
+    attention_max = GlobalMaxPooling2D()(srcnn_output)
+    # Concatenate the average and max pooling results
+    attention = Concatenate(axis=-1)([attention_avg, attention_max])
+    attention = Reshape((1, 1, 2 * channels))(attention)
+    # Dense layers to learn the attention weights
     attention = Dense(channels // 2, activation='selu', use_bias=False, kernel_initializer='he_uniform')(attention)
     attention = Dense(channels, activation='selu', use_bias=False, kernel_initializer='he_uniform')(attention)
     attention = Activation('sigmoid')(attention)
+    # Multiply the attention weights with the SRCNN output
     srcnn_output = Multiply()([srcnn_output, attention])
+    
 
     # Autoencoder (Encoder)
     l1 = Conv2D(64, (3, 3), padding='same', kernel_initializer='he_uniform', activation='relu')(srcnn_output)
@@ -184,9 +192,16 @@ def GAN_generator_cnn(lr_shape, scale_factor):
     
     decoded_output = add([srcnn_output, decoded_image, upsampled])
     
+    # Second Self-Attention Mechanism (applied to the combined output)
     channels = 3
-    attention = GlobalAveragePooling2D()(srcnn_output)
-    attention = Reshape((1, 1, channels))(attention)
+    # Global average pooling
+    attention_avg = GlobalAveragePooling2D()(decoded_output)
+    # Global max pooling
+    attention_max = GlobalMaxPooling2D()(decoded_output)
+    # Concatenate the average and max pooling results
+    attention = Concatenate(axis=-1)([attention_avg, attention_max])
+    attention = Reshape((1, 1, 2 * channels))(attention)
+    # Dense layers to learn the attention weights
     attention = Dense(channels // 2, activation='selu', use_bias=False, kernel_initializer='he_uniform')(attention)
     attention = Dense(channels, activation='selu', use_bias=False, kernel_initializer='he_uniform')(attention)
     attention = Activation('sigmoid')(attention)

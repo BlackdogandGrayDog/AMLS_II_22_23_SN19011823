@@ -36,50 +36,61 @@ def evaluate_generator(generator, hr_val_images, lr_val_images, example_idx=0, u
     """
     hr_val = np.array(hr_val_images)
     lr_val = np.array(lr_val_images)
+    
+    # Upsample LR images using bicubic interpolation
+    bicubic_val = []
+    for img in lr_val:
+        img = img_to_array(img)
+        img = img.astype('uint8')
+        img_resized = cv2.resize(img, (hr_val.shape[2], hr_val.shape[1]), interpolation=cv2.INTER_CUBIC)
+        bicubic_val.append(img_resized)
+    bicubic_val = np.array(bicubic_val)
 
-    # Upsample LR images using bicubic interpolation if use_bicubic is True
+    # Use bicubic upsampled images as input if use_bicubic is True
     if use_bicubic:
-        bicubic_val = []
-        for img in lr_val:
-            img = img_to_array(img)
-            img = img.astype('uint8')
-            img_resized = cv2.resize(img, (hr_val.shape[2], hr_val.shape[1]), interpolation=cv2.INTER_CUBIC)
-            bicubic_val.append(img_resized)
-        bicubic_val = np.array(bicubic_val)
         generated_hr_val = generator.predict_on_batch(bicubic_val)
     else:
         generated_hr_val = generator.predict_on_batch(lr_val)
+
+    # Calculate PSNR, SSIM, and MSE between HR and generated HR images
+    psnr_val = psnr(hr_val, generated_hr_val)
+    ssim_val = structural_similarity(hr_val, generated_hr_val, multichannel=True)
+    mse_val = mean_squared_error(hr_val, generated_hr_val)
+
+    # Calculate PSNR and SSIM between HR and bicubic upsampled LR images
+    psnr_val_lr = psnr(hr_val, bicubic_val)
+    ssim_val_lr = structural_similarity(hr_val, bicubic_val, multichannel=True)
 
     # Get HR, generated HR, and LR images using the specified example index
     hr_img = hr_val[example_idx]
     gen_hr_img = generated_hr_val[example_idx]
     lr_img = lr_val[example_idx]
 
-    # Calculate PSNR, SSIM, and MSE between HR and generated HR images
-    psnr_val = psnr(hr_img, gen_hr_img)
-    ssim_val = structural_similarity(hr_img, gen_hr_img, multichannel=True)
-    mse_val = mean_squared_error(hr_img, gen_hr_img)
+    # Convert images to appropriate depth
+    hr_img_8u = (hr_img * 255).astype(np.uint8)
+    gen_hr_img_8u = (gen_hr_img * 255).clip(0, 255).astype(np.uint8)
+    lr_img_8u = (lr_img * 255).astype(np.uint8)
 
     # Plot HR, generated HR, and LR images
     plt.figure(figsize=(50, 20))
 
     plt.subplot(131)
     plt.title('HR')
-    plt.imshow(hr_img)
+    plt.imshow(cv2.cvtColor(hr_img_8u, cv2.COLOR_BGR2RGB))
     plt.axis('off')
 
     plt.subplot(132)
     plt.title('Generated HR')
-    plt.imshow(gen_hr_img)
+    plt.imshow(cv2.cvtColor(gen_hr_img_8u, cv2.COLOR_BGR2RGB))
     plt.axis('off')
 
     plt.subplot(133)
     plt.title('LR')
-    plt.imshow(lr_img)
+    plt.imshow(cv2.cvtColor(lr_img_8u, cv2.COLOR_BGR2RGB))
     plt.axis('off')
 
-    plt.suptitle(f'PSNR: {psnr_val:.2f}, SSIM: {ssim_val:.2f}, MSE: {mse_val:.2f}')
-
+    plt.suptitle(f'Generated HR - PSNR: {psnr_val:.2f}, SSIM: {ssim_val:.2f}, MSE: {mse_val:.2f}\n'
+                 f'LR (Bicubic) - PSNR: {psnr_val_lr:.2f}, SSIM: {ssim_val_lr:.2f}')
     plt.show()
 
 #%%
@@ -170,7 +181,7 @@ def create_gan(lr_shape, hr_shape, scale_factor):
     vgg_network = gct.vgg19_block()
 
     # Compile the discriminator
-    discriminator_optimizer = Adam(lr=1e-4, beta_1=0.9)
+    discriminator_optimizer = Adam(lr=1.44683e-4, beta_1=0.3)
     gan_discriminator.compile(loss='binary_crossentropy', optimizer=discriminator_optimizer)
 
     # Freeze discriminator and VGG19 layers for SRGAN training
@@ -180,7 +191,7 @@ def create_gan(lr_shape, hr_shape, scale_factor):
 
     # Compile the SRGAN model
     srgan_model = gct.SRGAN_block_vgg(gan_generator, gan_discriminator, vgg_network, lr_shape)
-    srgan_optimizer = Adam(lr=1e-4, beta_1=0.9)
+    srgan_optimizer = Adam(lr=1.186287e-4, beta_1=0.2)
     srgan_model.compile(loss=['binary_crossentropy', 'mse'], optimizer=srgan_optimizer, loss_weights=[1e-3, 1])
 
     return gan_generator, gan_discriminator, srgan_model, vgg_network
